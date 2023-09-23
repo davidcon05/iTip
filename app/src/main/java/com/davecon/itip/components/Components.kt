@@ -36,7 +36,7 @@ fun InputField(
 ) {
     OutlinedTextField(
         value = valueState.value,
-        onValueChange = { valueState.value },
+        onValueChange = { newValue -> valueState.value = newValue },
         label = { Text(labelID) },
         leadingIcon = {
             Icon(
@@ -45,11 +45,10 @@ fun InputField(
             )
         },
         enabled = enabled,
-        textStyle = TextStyle(fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground),
+        textStyle = TextStyle(fontSize = 24.sp, color = MaterialTheme.colorScheme.onBackground),
         singleLine = isSingleLine,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
         keyboardActions = onAction,
-        modifier = modifier
-            .padding(8.dp),
+        modifier = modifier,
     ) // OutlinedTextField
 }

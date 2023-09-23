@@ -1,5 +1,7 @@
 package com.davecon.itip
 
+import android.content.ContentValues.TAG
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -82,12 +84,30 @@ fun TipDisplay(tipPerPerson: Double = 0.0) {
     }
 }
 
+/**
+ * This implmentation allows for state hoisting the form info to the calculator composable
+ */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TipCalculator() {
+    // We can now use a lambda to detct changes in the bill amount
+    BillForm() { billAmount ->
+        Log.d(TAG, "Tip Calculator: Bill amount changed to $billAmount")
+    }
+    // Text FAB- numberPersons - FAB+
+    // Tip
+    // Cool idea, buttons for tip percentage: 10%, 15%, 20%, custom
+    // Tap custom to reveal slider
+
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {}) {
     val billState = remember { mutableStateOf("") }
     val textFieldState = remember(billState.value) { billState.value.trim().isNotEmpty() }
     val keyboardController = LocalSoftwareKeyboardController.current
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -111,23 +131,10 @@ fun TipCalculator() {
                 onAction = KeyboardActions(
                     onNext = {
                         if (!textFieldState) return@KeyboardActions
-                            // TODO: dismiss keyboard
+                        onValChanged(billState.value.trim())
                         keyboardController?.hide()
                     },
                 )
-            )
-
-            // Text FAB- numberPersons - FAB+
-            // Tip
-            // Cool idea, buttons for tip percentage: 10%, 15%, 20%, custom
-            // Tap custom to reveal slider
-            Text(
-                text = "Jib black jack aft rigging heave to fore wench jolly boat gabion Shiver me timbers. Heave to hands nipperkin Chain Shot hornswaggle no prey, no pay splice the main brace topmast belay doubloon. Hempen halter loaded to the gunwalls maroon plunder warp fluke case shot no prey, no pay belaying pin hardtack.\n" +
-                        "\n" +
-                        "Plate Fleet gangway belay no prey, no pay Brethren of the Coast parley Privateer list avast American Main. Avast rutters crimp provost mizzen maroon black jack aye skysail strike colors. Cog tender killick transom squiffy holystone handsomely long clothes matey mizzenmast.\n",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
             )
         }
     }
