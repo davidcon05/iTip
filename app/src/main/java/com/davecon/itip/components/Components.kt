@@ -6,6 +6,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AttachMoney
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -13,13 +15,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.davecon.itip.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,4 +54,15 @@ fun InputField(
         keyboardActions = onAction,
         modifier = modifier,
     ) // OutlinedTextField
+}
+
+@Composable
+fun TipButton(tipPercentage: String) {
+    Button(
+        modifier = Modifier.padding(8.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = colorResource(R.color.light_green)),
+        onClick = { /*TODO*/ }) {
+        Text(text = tipPercentage, color = Color.Black)
+    }
 }
