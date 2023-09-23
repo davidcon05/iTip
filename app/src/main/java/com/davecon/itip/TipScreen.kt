@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.*
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -18,9 +19,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.davecon.itip.ui.theme.ITipTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -77,8 +82,12 @@ fun TipDisplay(tipPerPerson: Double = 0.0) {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TipCalculator() {
+    val billState = remember { mutableStateOf("") }
+    val textFieldState = remember(billState.value) { billState.value.trim().isNotEmpty() }
+    val keyboardController = LocalSoftwareKeyboardController.current
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -96,8 +105,18 @@ fun TipCalculator() {
             verticalArrangement = Arrangement.Center
         ) {
             // Text Field
-            InputField()
-            //OutlinedTextField(value = , onValueChange = )
+            InputField(
+                valueState = billState,
+                labelID = "Enter Bill Amount",
+                onAction = KeyboardActions(
+                    onNext = {
+                        if (!textFieldState) return@KeyboardActions
+                            // TODO: dismiss keyboard
+                        keyboardController?.hide()
+                    },
+                )
+            )
+
             // Text FAB- numberPersons - FAB+
             // Tip
             // Cool idea, buttons for tip percentage: 10%, 15%, 20%, custom
