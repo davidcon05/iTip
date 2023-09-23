@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.*
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,6 +25,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.davecon.itip.components.InputField
 
 @Composable
 fun TipScreen() {
@@ -94,7 +96,8 @@ fun TipCalculator() {
             verticalArrangement = Arrangement.Center
         ) {
             // Text Field
-            //TextField()
+            InputField()
+            //OutlinedTextField(value = , onValueChange = )
             // Text FAB- numberPersons - FAB+
             // Tip
             // Cool idea, buttons for tip percentage: 10%, 15%, 20%, custom
