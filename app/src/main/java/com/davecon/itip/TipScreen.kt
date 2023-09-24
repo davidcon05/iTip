@@ -83,7 +83,7 @@ fun TipDisplay(tipPerPerson: Double = 0.0) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Total Per Person",
+                text = "Tip Per Person",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
@@ -175,13 +175,6 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
                         isCustomTip = it
                     }
                 }
-                Row(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                ) {
-                    TipAmount(tipPerPerson.value)
-                }
                 if (isCustomTip) {
                     Column(
                         modifier = modifier
@@ -204,13 +197,9 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
 
     fun calculateTipPerPerson(
         tipPercentage: Double,
-        tipPerPerson: Double,
-        onValChanged: (String) -> Unit,
     ) {
         val billAmount = billState.value.toDouble()
-        val tipAmount = billAmount * tipPercentage
-        val tipPerPerson = (billAmount.times(tipPercentage)) / numberPersons.value
-        onValChanged(tipPerPerson.toString())
+        tipPerPerson.value = (billAmount.times(tipPercentage)) / numberPersons.value
     }
 
     fun calculateTotalPerPerson() {
@@ -269,22 +258,6 @@ fun TipPercentageButtons(
             onClick = { onCustomTipClicked(!isCustomTip) })
     }
 }
-
-@Composable
-fun TipAmount(tipPerPerson: Double) {
-    // Tip
-    Column(
-        modifier = Modifier
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        val tip = "%.2f".format(tipPerPerson)
-        Text("$$tip", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-        Text(text = "Tip per Person", modifier = Modifier.padding(start = 8.dp), fontSize = 16.sp)
-    }
-}
-
 @Composable
 fun CustomTipSlider(sliderPosition: MutableState<Float>) {
     Divider(
