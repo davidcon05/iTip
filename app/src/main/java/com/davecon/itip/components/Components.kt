@@ -76,7 +76,7 @@ fun TipButton(
         colors = ButtonDefaults.buttonColors(
             containerColor = colorResource(R.color.light_green)
         ),
-        onClick = { onClick }) {
+        onClick = { onClick() }) {
         Text(text = percentageString, color = Color.Black)
     }
 }
@@ -88,10 +88,7 @@ fun RoundIconButton(
     description: String,
     onClick: () -> Unit,
 ) {
-    IconButton(
-        onClick = {
-            onClick()
-        }
+    IconButton( onClick = { onClick() }
     ) {
         Icon(
             modifier = Modifier.shadow(0.5.dp, CircleShape),
