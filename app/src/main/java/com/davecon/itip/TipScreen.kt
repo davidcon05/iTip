@@ -1,6 +1,7 @@
 package com.davecon.itip
 
 import android.content.ContentValues.TAG
+import android.health.connect.datatypes.units.Percentage
 import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -120,6 +121,7 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
     var isCustomTip by remember { mutableStateOf(false) }
     val sliderPosition = remember { mutableFloatStateOf(0.0f) }
     val numberPersons = remember { mutableIntStateOf(1) }
+    val tipPerPerson = remember { mutableDoubleStateOf(0.0) }
 
     Surface(
         modifier = Modifier
@@ -127,7 +129,7 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
             .padding(top = 8.dp, bottom = 8.dp)
             .border(
                 width = 1.dp,
-                color = Color.LightGray,
+                color = MaterialTheme.colorScheme.onBackground,
                 shape = RoundedCornerShape(corner = CornerSize(12.dp))
             ),
     ) {
@@ -178,7 +180,7 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
                         .padding(16.dp)
                         .fillMaxWidth(),
                 ) {
-                    TipAmount(tipPerPerson = 0.0)
+                    TipAmount(tipPerPerson.value)
                 }
                 if (isCustomTip) {
                     Column(
@@ -198,6 +200,22 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
                 Box() {}
             }
         }
+    }
+
+    fun calculateTipPerPerson(
+        tipPercentage: Double,
+        tipPerPerson: Double,
+        onValChanged: (String) -> Unit,
+    ) {
+        val billAmount = billState.value.toDouble()
+        val tipAmount = billAmount * tipPercentage
+        val tipPerPerson = (billAmount.times(tipPercentage)) / numberPersons.value
+        onValChanged(tipPerPerson.toString())
+    }
+
+    fun calculateTotalPerPerson() {
+
+
     }
 }
 
@@ -235,17 +253,19 @@ fun SplitControls(numPersons: MutableState<Int>) {
 fun TipPercentageButtons(
     tipAmount: MutableState<Double> = mutableDoubleStateOf(0.0),
     isCustomTip: Boolean,
-    onCustomTipClicked: (Boolean) -> Unit
+    onCustomTipClicked: (Boolean) -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
-        TipButton(tipPercentage = (tipAmount.value + 0.15), onClick = { tipAmount.value = 0.15 })
-        TipButton(tipPercentage = (tipAmount.value + 0.20), onClick = { tipAmount.value = 0.20 })
+        // TODO: Make these buttons adjust the tip amount
+        // Pressing the tip button should update the tip per person
+        TipButton(tipPercentage = ("15%"), onClick = { tipAmount.value = 0.15 })
+        TipButton(tipPercentage = ("20%"), onClick = { tipAmount.value = 0.20 })
         TipButton(
-            tipPercentage = (tipAmount.value + 0.00),
+            tipPercentage = ("Custom"),
             onClick = { onCustomTipClicked(!isCustomTip) })
     }
 }

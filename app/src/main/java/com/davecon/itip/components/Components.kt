@@ -52,7 +52,10 @@ fun InputField(
             )
         },
         enabled = enabled,
-        textStyle = TextStyle(fontSize = 24.sp, color = MaterialTheme.colorScheme.onBackground),
+        textStyle = TextStyle(
+            fontSize = 24.sp,
+            color = MaterialTheme.colorScheme.onBackground
+        ),
         singleLine = isSingleLine,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
         keyboardActions = onAction,
@@ -63,21 +66,16 @@ fun InputField(
 @Composable
 fun TipButton(
     modifier: Modifier = Modifier,
-    tipPercentage: Double?,
+    tipPercentage: String,
     onClick: () -> Unit,
 ) {
-    val percentageString = if (0.0 == tipPercentage) {
-        "Custom"
-    } else {
-        "${(tipPercentage?.times(100))?.toInt()}%"
-    }
     Button(
         modifier = Modifier.padding(8.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = colorResource(R.color.light_green)
         ),
         onClick = { onClick() }) {
-        Text(text = percentageString, color = Color.Black)
+        Text(text = tipPercentage, color = Color.Black)
     }
 }
 
@@ -88,7 +86,7 @@ fun RoundIconButton(
     description: String,
     onClick: () -> Unit,
 ) {
-    IconButton( onClick = { onClick() }
+    IconButton(onClick = { onClick() }
     ) {
         Icon(
             modifier = Modifier.shadow(0.5.dp, CircleShape),
