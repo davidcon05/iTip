@@ -15,11 +15,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.RemoveCircleOutline
 import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -29,12 +26,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.davecon.itip.ui.theme.ITipTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
@@ -44,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.davecon.itip.components.InputField
+import com.davecon.itip.components.RoundIconButton
 import com.davecon.itip.components.TipButton
 
 @Composable
@@ -101,7 +104,7 @@ fun TipDisplay(tipPerPerson: Double = 0.0) {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TipCalculator() {
-    // We can now use a lambda to detct changes in the bill amount
+    // We can now use a lambda to detect changes in the bill amount
     BillForm() { billAmount ->
         Log.d(TAG, "Tip Calculator: Bill amount changed to $billAmount")
     }
@@ -113,9 +116,10 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
     val billState = remember { mutableStateOf("") }
     val validAmountState = remember(billState.value) { billState.value.trim().isNotEmpty() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val tipPercentage = remember { mutableStateOf(0.0) }
-    val isCustomTip = remember { mutableStateOf(false) }
-    val sliderPosition = remember { mutableStateOf(0.0f) }
+    val tipPercentage = remember { mutableDoubleStateOf(0.0) }
+    var isCustomTip by remember { mutableStateOf(false) }
+    val sliderPosition = remember { mutableFloatStateOf(0.0f) }
+    val numberPersons = remember { mutableIntStateOf(1) }
 
     Surface(
         modifier = Modifier
@@ -148,7 +152,7 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
                     .padding(8.dp)
             )
             // validState is true when the text field is not empty
-            if (true /*validAmountState*/) {
+            if (validAmountState) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -162,10 +166,12 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
                             .padding(start = 8.dp),
                         fontSize = 16.sp
                     )
-                    SplitControls(numPersons = 99)
+                    SplitControls(numberPersons)
                 }
                 Row {
-                    TipPercentageButtons()
+                    TipPercentageButtons(tipPercentage, isCustomTip) {
+                        isCustomTip = it
+                    }
                 }
                 Row(
                     modifier = Modifier
@@ -174,56 +180,20 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
                 ) {
                     TipAmount(tipPerPerson = 0.0)
                 }
-                Column(
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Divider(
-                        modifier = Modifier
+                if (isCustomTip) {
+                    Column(
+                        modifier = modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
-                    )
-                    Text("33%", fontSize = 24.sp, modifier = Modifier.padding(bottom = 8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
+                            .padding(top = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text(text = "0",
-                            modifier = Modifier
-                                .align(Alignment.CenterVertically)
-                                .padding(start = 8.dp)
-                        )
-                        Slider(
-                            modifier = Modifier
-                                .padding(start = 8.dp, end = 8.dp)
-                                .width(272.dp)
-                                .align(Alignment.CenterVertically)
-                                .semantics {
-                                    contentDescription = "Custom Tip Percentage Slider"
-                                },
-                            value = sliderPosition.value,
-                            onValueChange = { sliderPosition.value = it },
-                            valueRange = 0.0f..1.0f,
-                            steps = 100,
-                            colors = SliderDefaults.colors(
-                                thumbColor = Color.Black,
-                                activeTrackColor = colorResource(id = R.color.light_green),
-                                inactiveTrackColor = Color.LightGray
-                            )
-                        )
-                        Text(text = "100",
-                            modifier = Modifier
-                                .align(Alignment.CenterVertically)
-                                .padding(end = 8.dp)
-                        )
+                        // Cool idea, buttons for tip percentage: 15%, 20%, custom
+                        // Tap custom to reveal slider
+                        CustomTipSlider(sliderPosition = sliderPosition)
                     }
+                } else {
+                    Box() {}
                 }
-
-
-                // Cool idea, buttons for tip percentage: 10%, 15%, 20%, custom
-                // Tap custom to reveal slider
             } else {
                 Box() {}
             }
@@ -232,41 +202,51 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
 }
 
 @Composable
-fun SplitControls(numPersons: Int) {
+fun SplitControls(numPersons: MutableState<Int>) {
+    val persons = "%3d".format(numPersons.value)
     Row(
         modifier = Modifier
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.End
     ) {
-        IconButton(onClick = { /*TODO*/ }) {
-            Icon(
-                modifier = Modifier.shadow(0.5.dp, CircleShape),
-                imageVector = Icons.Outlined.RemoveCircleOutline,
-                contentDescription = "Subtract person to split tip"
-            )
-        }
-        val persons = "%3d".format(numPersons)
+        RoundIconButton(
+            modifier = Modifier,
+            icon = Icons.Outlined.RemoveCircleOutline,
+            description = "Subtract person to split tip",
+            onClick = {
+                if (numPersons.value > 1) numPersons.value -= 1
+            }
+        )
+
         Text("$persons", modifier = Modifier.align(Alignment.CenterVertically), fontSize = 16.sp)
-        IconButton(onClick = { /*TODO*/ }) {
-            Icon(
-                modifier = Modifier.shadow(0.5.dp, CircleShape),
-                imageVector = Icons.Outlined.AddCircleOutline,
-                contentDescription = "Add person to split tip"
-            )
-        }
+
+        RoundIconButton(
+            modifier = Modifier,
+            icon = Icons.Outlined.RemoveCircleOutline,
+            description = "Add person to split tip",
+            onClick = {
+                if (numPersons.value < 100) numPersons.value += 1
+            }
+        )
     }
 }
 
 @Composable
-fun TipPercentageButtons() {
+fun TipPercentageButtons(
+    tipAmount: MutableState<Double> = mutableDoubleStateOf(0.0),
+    isCustomTip: Boolean,
+    onCustomTipClicked: (Boolean) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
+        horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
-        TipButton(tipPercentage = "15%")
-        TipButton(tipPercentage = "20%")
-        TipButton(tipPercentage = "Custom")
+        TipButton(tipPercentage = (tipAmount.value + 0.15), onClick = { tipAmount.value = 0.15 })
+        TipButton(tipPercentage = (tipAmount.value + 0.20), onClick = { tipAmount.value = 0.20 })
+        TipButton(
+            tipPercentage = (tipAmount.value + 0.00),
+            onClick = { onCustomTipClicked(!isCustomTip) })
     }
 }
 
@@ -282,6 +262,51 @@ fun TipAmount(tipPerPerson: Double) {
         val tip = "%.2f".format(tipPerPerson)
         Text("$$tip", fontSize = 32.sp, fontWeight = FontWeight.Bold)
         Text(text = "Tip per Person", modifier = Modifier.padding(start = 8.dp), fontSize = 16.sp)
+    }
+}
+
+@Composable
+fun CustomTipSlider(sliderPosition: MutableState<Float>) {
+    Divider(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    )
+    Text("33%", fontSize = 24.sp, modifier = Modifier.padding(bottom = 8.dp))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = "0",
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .padding(start = 8.dp)
+        )
+        Slider(
+            modifier = Modifier
+                .padding(start = 8.dp, end = 8.dp)
+                .width(272.dp)
+                .align(Alignment.CenterVertically)
+                .semantics {
+                    contentDescription = "Custom Tip Percentage Slider"
+                },
+            value = sliderPosition.value,
+            onValueChange = { sliderPosition.value = it },
+            valueRange = 0.0f..1.0f,
+            steps = 100,
+            colors = SliderDefaults.colors(
+                thumbColor = Color.Black,
+                activeTrackColor = colorResource(id = R.color.light_green),
+                inactiveTrackColor = Color.LightGray
+            )
+        )
+        Text(
+            text = "100",
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .padding(end = 8.dp)
+        )
     }
 }
 
