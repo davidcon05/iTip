@@ -1,7 +1,6 @@
 package com.davecon.itip
 
 import android.content.ContentValues.TAG
-import android.health.connect.datatypes.units.Percentage
 import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.davecon.itip.ui.theme.ITipTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.MutableDoubleState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -102,11 +102,10 @@ fun TipDisplay(tipPerPerson: Double = 0.0) {
 /**
  * This implementation allows for state hoisting the form info to the calculator composable
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TipCalculator() {
     // We can now use a lambda to detect changes in the bill amount
-    BillForm() { billAmount ->
+    BillForm { billAmount ->
         Log.d(TAG, "Tip Calculator: Bill amount changed to $billAmount")
     }
 }
@@ -119,9 +118,10 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
     val keyboardController = LocalSoftwareKeyboardController.current
     val tipPercentage = remember { mutableDoubleStateOf(0.0) }
     var isCustomTip by remember { mutableStateOf(false) }
-    val sliderPosition = remember { mutableFloatStateOf(0.0f) }
+    val sliderPositionState = remember { mutableFloatStateOf(0.0f) }
     val numberPersons = remember { mutableIntStateOf(1) }
     val tipPerPerson = remember { mutableDoubleStateOf(0.0) }
+    val tipAmountState = remember { mutableDoubleStateOf(0.0) }
 
     Surface(
         modifier = Modifier
@@ -171,7 +171,7 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
                     SplitControls(numberPersons)
                 }
                 Row {
-                    TipPercentageButtons(tipPercentage, isCustomTip) {
+                    TipPercentageButtons(tipPercentage, sliderPositionState, isCustomTip) {
                         isCustomTip = it
                     }
                 }
@@ -184,28 +184,31 @@ fun BillForm(modifier: Modifier = Modifier, onValChanged: (String) -> Unit = {})
                     ) {
                         // Cool idea, buttons for tip percentage: 15%, 20%, custom
                         // Tap custom to reveal slider
-                        CustomTipSlider(sliderPosition = sliderPosition)
+                        CustomTipSlider(
+                            sliderPositionState = sliderPositionState,
+                            tipAmountState,
+                            billState,
+                            numberPersons,
+                        )
                     }
                 } else {
-                    Box() {}
+                    Box {}
                 }
             } else {
-                Box() {}
+                Box {}
             }
         }
     }
+}
 
-    fun calculateTipPerPerson(
-        tipPercentage: Double,
-    ) {
-        val billAmount = billState.value.toDouble()
-        tipPerPerson.value = (billAmount.times(tipPercentage)) / numberPersons.value
-    }
-
-    fun calculateTotalPerPerson() {
-
-
-    }
+fun calculateTip(
+    billAmount: String,
+    tipPercentage: Float,
+    numberPersons: Int,
+): Double {
+    if (billAmount.isEmpty()) return 0.0
+    val bill = billAmount.toDouble()
+    return (bill * tipPercentage) / numberPersons
 }
 
 @Composable
@@ -225,7 +228,7 @@ fun SplitControls(numPersons: MutableState<Int>) {
             }
         )
 
-        Text("$persons", modifier = Modifier.align(Alignment.CenterVertically), fontSize = 16.sp)
+        Text(persons, modifier = Modifier.align(Alignment.CenterVertically), fontSize = 16.sp)
 
         RoundIconButton(
             modifier = Modifier,
@@ -240,7 +243,8 @@ fun SplitControls(numPersons: MutableState<Int>) {
 
 @Composable
 fun TipPercentageButtons(
-    tipAmount: MutableState<Double> = mutableDoubleStateOf(0.0),
+    tipPercentage: MutableState<Double> = mutableDoubleStateOf(0.0),
+    sliderPositionState: MutableState<Float>,
     isCustomTip: Boolean,
     onCustomTipClicked: (Boolean) -> Unit,
 ) {
@@ -251,27 +255,43 @@ fun TipPercentageButtons(
     ) {
         // TODO: Make these buttons adjust the tip amount
         // Pressing the tip button should update the tip per person
-        TipButton(tipPercentage = ("15%"), onClick = { tipAmount.value = 0.15 })
-        TipButton(tipPercentage = ("20%"), onClick = { tipAmount.value = 0.20 })
+        TipButton(tipPercentage = ("15%")) {
+            tipPercentage.value = 0.15
+            sliderPositionState.value = 0.15f
+        }
+        TipButton(tipPercentage = ("20%")) {
+            tipPercentage.value = 0.20
+            sliderPositionState.value = 0.20f
+        }
         TipButton(
             tipPercentage = ("Custom"),
             onClick = { onCustomTipClicked(!isCustomTip) })
     }
 }
+
 @Composable
-fun CustomTipSlider(sliderPosition: MutableState<Float>) {
+fun CustomTipSlider(
+    sliderPositionState: MutableState<Float>,
+    tipAmountState: MutableDoubleState,
+    billState: MutableState<String>,
+    numberPersons: MutableState<Int>,
+) {
     Divider(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
     )
-    Text("33%", fontSize = 24.sp, modifier = Modifier.padding(bottom = 8.dp))
+    Text(
+        sliderPositionState.value.times(100).toInt().toString().plus('%'),
+        fontSize = 24.sp,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
 
     Row(
         modifier = Modifier.fillMaxWidth(),
     ) {
         Text(
-            text = "0",
+            text = "1",
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .padding(start = 8.dp)
@@ -284,9 +304,17 @@ fun CustomTipSlider(sliderPosition: MutableState<Float>) {
                 .semantics {
                     contentDescription = "Custom Tip Percentage Slider"
                 },
-            value = sliderPosition.value,
-            onValueChange = { sliderPosition.value = it },
-            valueRange = 0.0f..1.0f,
+            value = sliderPositionState.value,
+            onValueChange = { newVal ->
+                sliderPositionState.value = newVal
+                tipAmountState.value =
+                    calculateTip(billState.value, sliderPositionState.value, numberPersons.value)
+                Log.d("Slider", "Slider finished, tip is: ${tipAmountState.value}")
+            },
+            onValueChangeFinished = {
+                //Log.d("Slider", "CustomTipSlider: Finished...")
+            },
+            valueRange = 0.01f..1.0f,
             steps = 100,
             colors = SliderDefaults.colors(
                 thumbColor = Color.Black,
@@ -310,8 +338,3 @@ fun TipScreenPreview() {
         TipScreen()
     }
 }
-
-
-
-
-
